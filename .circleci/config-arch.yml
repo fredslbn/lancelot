@@ -1,0 +1,22 @@
+version: 2.1
+jobs:
+  compile:
+   docker:
+      - image: panchajanya1999/archlinux:latest
+   steps:
+      - add_ssh_keys:
+          fingerprints:
+          - "54:19:53:76:bd:06:22:fb:81:75:5d:16:64:b2:53:86"
+      - run:
+          command: |
+            pacman -Sy --needed --noconfirm archlinux-keyring
+            pacman -Syyu --needed --noconfirm wget xmlto base-devel inetutils bc cpio python python-sphinx python-sphinx_rtd_theme graphviz git zip fortune-mod
+            git clone --depth=1 https://github.com/fredslbn/chime-caf.git -b main builder_kernel
+            cd builder_kernel
+            git submodule update --init --recursive
+            
+workflows:
+  version: 2.1
+  cooking:
+    jobs:
+      - compile

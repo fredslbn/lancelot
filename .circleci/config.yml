@@ -1,0 +1,20 @@
+version: 2.1
+jobs:
+  compile:
+   docker:
+      - image: nexgang/ubuntu:latest
+   steps:
+      - run:
+          command: |
+            apt update && apt upgrade -y
+            apt install -f -y git
+            ln -fs /usr/share/zoneinfo/Asia/Jakarta /etc/localtime && date
+            git clone --depth=1 https://github.com/fredslbn/lancelot.git -b main builder_kernel
+            cd builder_kernel
+            git submodule update --init --recursive
+            bash .circleci/clanglinaro.sh
+workflows:
+  version: 2.1
+  cooking:
+    jobs:
+      - compile

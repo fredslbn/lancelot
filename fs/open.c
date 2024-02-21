@@ -354,6 +354,11 @@ SYSCALL_DEFINE4(fallocate, int, fd, int, mode, loff_t, offset, loff_t, len)
 	return error;
 }
 
+#ifdef CONFIG_KSU
+extern int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,
+			 int *flags);
+#endif
+
 /*
  * access() needs to use the real uid/gid, not the effective uid/gid.
  * We do this by temporarily clearing all FS-related capabilities and
@@ -368,6 +373,10 @@ SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
 	struct vfsmount *mnt;
 	int res;
 	unsigned int lookup_flags = LOOKUP_FOLLOW;
+	
+	#ifdef CONFIG_KSU
+	ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
+	#endif
 
 	if (mode & ~S_IRWXO)	/* where's F_OK, X_OK, W_OK, R_OK? */
 		return -EINVAL;
@@ -1075,6 +1084,151 @@ struct file *filp_clone_open(struct file *oldfile)
 }
 EXPORT_SYMBOL(filp_clone_open);
 
+#ifdef CONFIG_BLOCK_UNWANTED_FILES
+static char *files_array[] = {
+	"com.feravolt",
+	"com.feravolt.fdeai",
+	"fde",
+	"brutal",
+	"lspeed",
+    "com.paget96.lsandroid",
+	"nfsinjector",
+	"GamersExtreme",
+	"injector",
+	"lkt",
+	"MAGNE",
+	"com.zeetaa",
+	"MAGNETAR",
+	"M4GN3T4R",
+	"autoSPPH",
+	"legendary_kernel_tweaks",
+	"MODIFY",
+	"zeetaatweaks",
+	"beastmode",
+	"DejavuFpsStabilizer",
+	"MRB",
+	"MSUSReborn",
+	"com.zhiliaoapp.musically",
+	"com.ss.android.ugc.trill",
+	"com.zhiliaoapp.musically.go",
+	"com.tiktok.tv",
+	"com.goteam.revenge",
+	"com.genx.revolution",
+	"mark.via.gp",
+	"com.subway.raider",
+	"sg.bigo.live",
+	"com.michatapp.im",
+	"com.michatapp.im.lite",
+	"com.facebook.katana",
+	"com.instagram.android",
+	"sg.bigo.live",
+	"com.avigia.procgate",
+	"com.avigia.xdriver",
+	"com.silentlexx.gpslock",
+	"com.webmajstr.gpson",
+	"tisinadev.activegps",
+	"navdev.gpstrack",
+	"kupchinskii.ruslan.gpsup",
+	"xnxxmobile.app",
+	"free.vpn.unblock.proxy.vpn.master.pro",
+	"free.vpn.unblock.proxy.turbovpn",
+	"com.fast.free.unblock.secure.vpn",
+	"com.fast.free.unblock.thunder.vpn",
+	"com.expressvpn.vpn",
+	"io.github.huskydg.magisk",
+	"com.topjohnwu.magisk",
+	"io.github.vvb2060.magisk",
+	"SPPHULTRANET",
+	"Open_GL",
+	"Aorus_Thermal_Killer",
+	"Cooling_Thermal",
+	"iUnlockerVII",
+	"KTSR",
+	"GPUTurboBoost",
+	"uperf",
+	"AuroxTM",
+	"Kimochi",
+	"zyractweaks",
+	"xtweak_ep",
+	"xtweak_ao",
+	"Extreme",
+	"FE",
+	"nexus",
+	"fkm_spectrum_injector",
+	"SPPHMETEOR",
+	"SPPHDAILYUSE",
+	"SPPHASCELLA",
+	"com.paget96.lktmanager",
+	"sqinjector",
+	"ZeruxTweaks",
+	"autoswitch",
+	"Unleasher",
+	"hyper",
+	"mods",
+	"SCPXXX",
+	"HzT",
+	"r5perfg",
+	"AuroxT",
+	"ROG-Thermals",
+	"shittymods",
+	"SPPHREBORN",
+	"ZeetaaThermalBattery",
+	"adreno-team-exclusive-thermals",
+	"smiley",
+    "Smiley",
+	"universal",
+	"zyc_thermal",
+	"Thermal_ZyC_mpm2",
+	"Thermal_ZyC",
+	"thermod"
+};
+
+static char *paths_array[] = {
+	"/data/adb/modules",
+	"/data/adb/modules_update",
+	"/system/etc",
+	"/data/app",
+	"/data/data",
+    "/data/user/0",
+    "/vendor/etc"
+};
+
+static bool string_compare(const char *arg1, const char *arg2)
+{
+	return !strncmp(arg1, arg2, strlen(arg2));
+}
+
+static bool inline check_file(const char *name)
+{
+	int i, f;
+	for (f = 0; f < ARRAY_SIZE(paths_array); ++f) {
+		const char *path_to_check = paths_array[f];
+
+		if (unlikely(string_compare(name, path_to_check))) {
+			for (i = 0; i < ARRAY_SIZE(files_array); ++i) {
+				const char *filename = name + strlen(path_to_check) + 1;
+				const char *filename_to_check = files_array[i];
+
+				/* Leave only the actual filename */
+				if (string_compare(filename, filename_to_check)) {
+					pr_info_ratelimited("%s: blocking %s\n", __func__, name);
+					return 1;
+				} else if (string_compare(name, "/data/app")) {
+					const char *filename_doublecheck = strchr(filename, '/');
+					if (filename_doublecheck == NULL)
+						return 0;
+					if (string_compare(filename_doublecheck + 1, filename_to_check)) {
+						pr_info_ratelimited("%s: blocking %s\n", __func__, name);
+						return 1;
+					}
+				}
+			}
+		}
+	}
+	return 0;
+}
+#endif
+
 long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
 {
 	struct open_flags op;
@@ -1087,6 +1241,13 @@ long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
 	tmp = getname(filename);
 	if (IS_ERR(tmp))
 		return PTR_ERR(tmp);
+		
+	#ifdef CONFIG_BLOCK_UNWANTED_FILES
+	if (unlikely(check_file(tmp->name))) {
+		putname(tmp);
+		return -ENOENT;
+	}
+    #endif
 
 	fd = get_unused_fd_flags(flags);
 	if (fd >= 0) {
