@@ -16,8 +16,8 @@ supported.versions=
 '; } # end properties
 
 # shell variables
-block=auto;
-is_slot_device=auto;
+block=/dev/block/by-name/boot;
+is_slot_device=0;
 ramdisk_compression=auto;
 patch_vbmeta_flag=auto;
 
@@ -26,12 +26,14 @@ patch_vbmeta_flag=auto;
 # import patching functions/variables - see for reference
 . tools/ak3-core.sh;
 
+ui_print " " "Patching system's build prop for fuse passthrough..."
+# FUSE Passthrough
+patch_prop /system/build.prop "persist.sys.fuse.passthrough.enable" "true"
 
 ## AnyKernel file attributes
 # set permissions/ownership for included ramdisk files
 set_perm_recursive 0 0 755 644 $ramdisk/*;
 set_perm_recursive 0 0 750 750 $ramdisk/init* $ramdisk/sbin;
-
 
 ## AnyKernel install
 dump_boot;
