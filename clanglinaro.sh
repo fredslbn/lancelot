@@ -13,7 +13,7 @@ git submodule update --init --recursive --remote
 ##----------------------------------------------------------##
 # Device Name and Model
 MODEL=Xiaomi
-DEVICE=merlin
+DEVICE=lancelot
 
 # Kernel Version Code
 #VERSION=
