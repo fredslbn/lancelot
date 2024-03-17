@@ -1,5 +1,6 @@
 task:
   name: "Lancelot & Merlin"
+  trigger_type: manual
   timeout_in: 1h
   container:
       image: nexgang/ubuntu:latest
