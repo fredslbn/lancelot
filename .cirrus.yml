@@ -1,0 +1,10 @@
+task:
+  name: "Lancelot & Merlin"
+  timeout_in: 1h
+  container:
+      image: nexgang/ubuntu:latest
+      cpu: 8
+      memory: 32G
+      
+  Build_script:
+      - bash clanglinaro.sh
