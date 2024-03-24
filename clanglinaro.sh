@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
- ##
+ #
  # Script For Building Android Kernel
  #
 
@@ -13,7 +13,7 @@ git submodule update --init --recursive --remote
 ##----------------------------------------------------------##
 # Device Name and Model
 MODEL=Xiaomi
-DEVICE=lava
+DEVICE=merlin
 
 # Kernel Version Code
 #VERSION=
@@ -34,7 +34,7 @@ DATE=$(TZ=Asia/Jakarta date +"%Y%m%d-%T")
 TANGGAL=$(date +"%F%S")
 
 # Specify Final Zip Name
-ZIPNAME="SUPER.KERNEL-LANCELOT-(clanglinaro)-$(TZ=Asia/Jakarta date +"%Y%m%d-%H%M").zip"
+ZIPNAME="SUPER.KERNEL-MERLIN-(clanglinaro)-$(TZ=Asia/Jakarta date +"%Y%m%d-%H%M").zip"
 
 ##----------------------------------------------------------##
 # Specify compiler.
