@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
- #
+ ##
  # Script For Building Android Kernel
  #
 
