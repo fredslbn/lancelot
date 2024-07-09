@@ -9,6 +9,11 @@ task:
  
   setup_script:
     - apt update && apt upgrade -y
+    - cd KernelSU
+    - git submodule update --init --recursive --remote
+    - git checkout v0.9.5
+    - git rev-list --count HEAD
+    - cd ..
                  
   Build_script:
       - bash clanglinaro.sh
